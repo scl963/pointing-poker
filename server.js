@@ -35,10 +35,22 @@ io.on("connection", (socket) => {
     callback({
       roomId: newRoomId
     })
+  })
 
-    // socket.emit('Room joined', {
-    //   roomId: newRoomId
-    // })
+  socket.on("join-room", function (roomId, callback) {
+    const rooms = io.of('/').adapter.rooms;
+
+    if (rooms[roomId]) {
+      socket.join(roomId)
+
+      callback({
+        status: 'success'
+      })
+    } else {
+      callback({
+        status: 'error'
+      })
+    }
   })
 });
 
@@ -46,7 +58,7 @@ app.get("*", (req, res) => {
   res.sendFile(path.resolve(__dirname, "public", "index.html"));
 });
 
-// Need to user server here rather than app or else the sockets won't work
+// Need to use server here rather than app or else the sockets won't work
 server.listen(port, () => {
   console.log(`Server is up at port ${port}`);
 });
