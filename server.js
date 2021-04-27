@@ -37,16 +37,20 @@ io.on("connection", (socket) => {
     })
   })
 
-  socket.on("join-room", function (roomId, callback) {
+  socket.on("join-room-by-id", function (roomId, callback) {
     const rooms = io.of('/').adapter.rooms;
 
-    if (rooms[roomId]) {
+    console.log(roomId, rooms.has(roomId), rooms, rooms[roomId])
+
+    if (rooms.has(roomId)) {
+      console.log('Room exists')
       socket.join(roomId)
 
       callback({
         status: 'success'
       })
     } else {
+      console.log('Room does not exist')
       callback({
         status: 'error'
       })
