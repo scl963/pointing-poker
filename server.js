@@ -6,8 +6,10 @@ const path = require("path");
 const http = require("http");
 const server = http.createServer(app);
 const io = require("socket.io")(server);
+const uuid = require("uuid").v4;
 
 let currRoomIdx = 1;
+const pointValues = new Set([0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]);
 
 app.use(cors());
 
@@ -16,9 +18,28 @@ app.use(express.static("public"));
 io.on("connection", (socket) => {
   console.log("a user connected");
 
-  socket.on('chat message', (msg) => {
-   console.log('message: ' + msg);
- });
+  if (!socket.userId) {
+    socket.userId = uuid();
+  }
+
+  console.log(socket.userId);
+
+  socket.on("chat message", (msg) => {
+    console.log("message: " + msg);
+  });
+
+  // Leaving room logic happens in disconnecting because on disconnect there's no record
+  // of which rooms a user just left
+  socket.on("disconnecting", () => {
+    const rooms = io.of("/").adapter.rooms;
+
+    socket.rooms.forEach((roomId) => {
+      if (rooms.has(roomId)) {
+        const roomSize = rooms.get(roomId).size - 1;
+        io.to(roomId).emit("Room size changed", roomSize);
+      }
+    });
+  });
 
   socket.on("disconnect", function () {
     console.log("user disconnected");
@@ -30,32 +51,47 @@ io.on("connection", (socket) => {
 
     socket.join(newRoomId);
 
-    console.log(`User joined room ${newRoomId}`);
-
     callback({
-      roomId: newRoomId
-    })
-  })
+      roomId: newRoomId,
+    });
+  });
 
   socket.on("join-room-by-id", function (roomId, callback) {
-    const rooms = io.of('/').adapter.rooms;
-
-    console.log(roomId, rooms.has(roomId), rooms, rooms[roomId])
+    const rooms = io.of("/").adapter.rooms;
 
     if (rooms.has(roomId)) {
-      console.log('Room exists')
-      socket.join(roomId)
+      socket.join(roomId);
+
+      const roomSize = rooms.get(roomId).size;
+      io.to(roomId).emit("Room size changed", roomSize);
 
       callback({
-        status: 'success'
-      })
+        status: "success",
+      });
     } else {
-      console.log('Room does not exist')
       callback({
-        status: 'error'
-      })
+        status: "error",
+      });
     }
-  })
+  });
+
+  socket.on("assign-point-value", function (roomId, pointValue, callback) {
+    const rooms = io.of("/").adapter.rooms;
+
+    console.log("Assigning point value", roomId, pointValue, callback);
+
+    if (rooms.has(roomId)) {
+      if (pointValues.has(pointValue)) {
+        socket
+          .to(roomId)
+          .emit("point-value-assigned", socket.userId, pointValue);
+      } else {
+        callback("Invalid point value");
+      }
+    } else {
+      callback("Room does not exist");
+    }
+  });
 });
 
 app.get("*", (req, res) => {

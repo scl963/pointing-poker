@@ -1,9 +1,7 @@
 <script>
-  import { io } from "socket.io-client";
-  import { onMount } from "svelte";
   import { navigate } from "svelte-routing";
   let roomId = "";
-  let socket = io();
+  export let socket;
 
   function submitRoom() {
     console.log("submitting room!");
