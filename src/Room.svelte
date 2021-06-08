@@ -14,7 +14,6 @@
       console.log(userId);
       return assignedPoints[userId];
     }) || [];
-  console.log(assignedPointsArray);
   $: placeholderArray = Array(
     roomSize - Object.keys(assignedPoints).length
   ).fill(null);

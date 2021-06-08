@@ -56,6 +56,7 @@ io.on("connection", (socket) => {
     });
   });
 
+  // TODO: implement max room size
   socket.on("join-room-by-id", function (roomId, callback) {
     const rooms = io.of("/").adapter.rooms;
 
