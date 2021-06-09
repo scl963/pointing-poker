@@ -13,6 +13,6 @@
 <Router {url}>
   <div>
     <Route path="/"><Home {socket} /></Route>
-    <Route path="/room/:id" component={Room} {socket} />
+    <Route path="/rooms/:id" component={Room} {socket} />
   </div>
 </Router>

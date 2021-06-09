@@ -3,16 +3,20 @@
   let roomId = "";
   export let socket;
 
-  function submitRoom() {
-    console.log("submitting room!");
-    socket.emit("chat message", "hello");
+  function joinRoom() {
+    if (roomId && typeof roomId === "string")
+      socket.emit("join-room-by-id", roomId, (res) => {
+        if (res.status === "success") {
+          navigate(`/rooms/${roomId}`);
+        }
+      });
   }
 
   function createNewRoom() {
     console.log("Creating new room!");
     socket.emit("create-new-room", ({ roomId }) => {
       console.log("Room ID", roomId);
-      navigate(`/room/${roomId}`);
+      navigate(`/rooms/${roomId}`);
     });
   }
 </script>
@@ -29,7 +33,7 @@
   <div class="column">
     <div>
       <input bind:value={roomId} type="text" id="room-number-input" />
-      <button on:click={submitRoom}>Join Room</button>
+      <button on:click={joinRoom}>Join Room</button>
     </div>
     <p class="large-text">OR</p>
     <button on:click={createNewRoom}>Create new room</button>

@@ -5,8 +5,6 @@
   export let id;
   export let socket;
 
-  let roomSize = 1;
-
   const pointValues = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
   let currentState = { admin: null, points: {} };
 
@@ -31,7 +29,6 @@
 
   onMount(() => {
     socket.emit("join-room-by-id", id, (res) => {
-      console.log("join by id res", res);
       if (res.status === "error") {
         navigate("/");
       }
@@ -40,37 +37,54 @@
     });
 
     socket.on("state-change", (state) => {
-      console.log(state, socket.id);
       currentState = state;
     });
   });
 </script>
 
-<div>Welcome to my room! {id}</div>
-
-<div class="pointing-cards">
-  <div class="point-placeholder">
-    {!!userAssignedPointValue ? userAssignedPointValue : ""}
-  </div>
-  {#each assignedPointsArray as assignedPointValue}
-    <div class="point-placeholder">
-      {!!assignedPointValue ? assignedPointValue : ""}
+<div class="page-layout">
+  <div class="cards-container">
+    <div class="pointing-cards">
+      <div class="point-placeholder">
+        {!!userAssignedPointValue ? userAssignedPointValue : ""}
+      </div>
+      {#each assignedPointsArray as assignedPointValue}
+        <div class="point-placeholder">
+          {!!assignedPointValue ? assignedPointValue : ""}
+        </div>
+      {/each}
     </div>
-  {/each}
-</div>
 
-<div class="pointing-cards">
-  {#each pointValues as pointValue}
-    <button class="point-button" on:click={() => assignPointValue(pointValue)}>
-      {pointValue}
-    </button>
-  {/each}
+    <div class="pointing-cards">
+      {#each pointValues as pointValue}
+        <button
+          class="point-button"
+          on:click={() => assignPointValue(pointValue)}
+        >
+          {pointValue}
+        </button>
+      {/each}
+    </div>
+  </div>
 </div>
 
 <style lang="scss">
+  .page-layout {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    justify-content: center;
+    padding: 1rem;
+    width: 100vw;
+  }
+
   .pointing-cards {
     display: flex;
     direction: row;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
   }
 
   .point-placeholder {
@@ -80,6 +94,7 @@
     display: flex;
     height: 4rem;
     justify-content: center;
+    margin-right: 0.5rem;
     width: 3rem;
   }
 
@@ -87,10 +102,17 @@
     border-radius: 4px;
     cursor: pointer;
     height: 4rem;
+    margin-right: 0.5rem;
     width: 3rem;
 
     &:hover {
       background-color: #ebe7e7;
+    }
+  }
+
+  @media (min-width: 600px) {
+    .page-layout {
+      padding: 0;
     }
   }
 </style>
