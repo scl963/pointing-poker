@@ -8,39 +8,40 @@
   let roomSize = 1;
 
   const pointValues = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
-  let assignedPoints = {};
+  let currentState = { admin: null, points: {} };
+
   $: assignedPointsArray =
-    Object.keys(assignedPoints).map((userId) => {
-      console.log(userId);
-      return assignedPoints[userId];
-    }) || [];
-  $: placeholderArray = Array(
-    roomSize - Object.keys(assignedPoints).length
-  ).fill(null);
+    Object.keys(currentState?.points || {})
+      .filter((userId) => userId != socket.id)
+      .map((userId) => {
+        console.log(userId);
+        return currentState.points[userId];
+      }) || [];
+  $: userAssignedPointValue = currentState?.points[socket.id];
 
   function assignPointValue(pointValue) {
-    assignedPoints["localUser"] = pointValue;
+    console.log("current state", currentState, socket.id);
+    currentState.points[socket.id] = pointValue;
     socket.emit("assign-point-value", id, pointValue, (res) => {
       console.error("Error assigning point value");
+      console.log(res);
+      currentState.points[socket.id] = null;
     });
   }
 
   onMount(() => {
     socket.emit("join-room-by-id", id, (res) => {
-      console.log(res);
+      console.log("join by id res", res);
       if (res.status === "error") {
         navigate("/");
       }
+
+      currentState = res.data;
     });
 
-    socket.on("Room size changed", (newSize) => {
-      roomSize = newSize;
-    });
-
-    socket.on("point-value-assigned", (userId, pointValue) => {
-      const prevAssignedPoints = { ...assignedPoints };
-      prevAssignedPoints[userId] = pointValue;
-      assignedPoints = prevAssignedPoints;
+    socket.on("state-change", (state) => {
+      console.log(state, socket.id);
+      currentState = state;
     });
   });
 </script>
@@ -48,13 +49,13 @@
 <div>Welcome to my room! {id}</div>
 
 <div class="pointing-cards">
+  <div class="point-placeholder">
+    {!!userAssignedPointValue ? userAssignedPointValue : ""}
+  </div>
   {#each assignedPointsArray as assignedPointValue}
     <div class="point-placeholder">
-      {assignedPointValue}
+      {!!assignedPointValue ? assignedPointValue : ""}
     </div>
-  {/each}
-  {#each placeholderArray as placeholder}
-    <div class="point-placeholder" />
   {/each}
 </div>
 

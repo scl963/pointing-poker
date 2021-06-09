@@ -11,6 +11,10 @@ const uuid = require("uuid").v4;
 let currRoomIdx = 1;
 const pointValues = new Set([0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]);
 
+// We create an in memory cache of rooms with metadata and assigned point values, since we
+// can't user socket.io to store data for a room
+const roomStateCache = {};
+
 app.use(cors());
 
 app.use(express.static("public"));
@@ -22,21 +26,41 @@ io.on("connection", (socket) => {
     socket.userId = uuid();
   }
 
-  console.log(socket.userId);
+  function broadcastStateChange(roomId) {
+    const rooms = io.of("/").adapter.rooms;
 
-  socket.on("chat message", (msg) => {
-    console.log("message: " + msg);
-  });
+    if (rooms.has(roomId) && roomStateCache.hasOwnProperty(roomId)) {
+      const roomState = roomStateCache[roomId];
+      io.to(roomId).emit("state-change", roomState);
+    } else {
+      console.log("Attempted to broadcast to non-existent room");
+    }
+  }
 
   // Leaving room logic happens in disconnecting because on disconnect there's no record
-  // of which rooms a user just left
+  // of which rooms a user just left and we need to keep the cache in sync with socket.io
   socket.on("disconnecting", () => {
     const rooms = io.of("/").adapter.rooms;
 
     socket.rooms.forEach((roomId) => {
-      if (rooms.has(roomId)) {
-        const roomSize = rooms.get(roomId).size - 1;
-        io.to(roomId).emit("Room size changed", roomSize);
+      if (rooms.has(roomId) && roomStateCache.hasOwnProperty(roomId)) {
+        // Remove user from pointing map
+        delete roomStateCache[roomId].points[socket.id];
+
+        // If user was admin promote another
+        if (roomStateCache[roomId].admin === socket.id) {
+          const remainingUsers = Object.keys(roomStateCache[roomId].points);
+
+          // Check whether there are still users in room, and if not, delete it
+          if (remainingUsers.length) {
+            roomStateCache[roomId].admin = remainingUsers[0];
+          } else {
+            delete roomStateCache[roomId];
+            return;
+          }
+        }
+
+        broadcastStateChange(roomId);
       }
     });
   });
@@ -45,11 +69,18 @@ io.on("connection", (socket) => {
     console.log("user disconnected");
   });
 
+  // TODO: Use uuids for room identification
   socket.on("create-new-room", function (callback) {
     const newRoomId = String(currRoomIdx);
     currRoomIdx += 1;
 
     socket.join(newRoomId);
+
+    roomStateCache[newRoomId] = {
+      admin: socket.id,
+      points: {},
+    };
+    roomStateCache[newRoomId].points[socket.id] = null;
 
     callback({
       roomId: newRoomId,
@@ -68,7 +99,10 @@ io.on("connection", (socket) => {
 
       callback({
         status: "success",
+        roomData: roomStateCache[roomId],
       });
+      roomStateCache[roomId].points[socket.id] = null;
+      broadcastStateChange(roomId);
     } else {
       callback({
         status: "error",
@@ -79,13 +113,12 @@ io.on("connection", (socket) => {
   socket.on("assign-point-value", function (roomId, pointValue, callback) {
     const rooms = io.of("/").adapter.rooms;
 
-    console.log("Assigning point value", roomId, pointValue, callback);
+    console.log("Assigning point value", roomId, pointValue);
 
     if (rooms.has(roomId)) {
       if (pointValues.has(pointValue)) {
-        socket
-          .to(roomId)
-          .emit("point-value-assigned", socket.userId, pointValue);
+        roomStateCache[roomId].points[socket.id] = pointValue;
+        broadcastStateChange(roomId);
       } else {
         callback("Invalid point value");
       }
