@@ -6,25 +6,32 @@
   export let socket;
 
   const pointValues = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
-  let currentState = { admin: null, points: {} };
+  let currentState = { admin: null, points: {}, showPoints: false };
 
   $: assignedPointsArray =
     Object.keys(currentState?.points || {})
       .filter((userId) => userId != socket.id)
       .map((userId) => {
-        console.log(userId);
         return currentState.points[userId];
-      }) || [];
+      })
+      .sort() || [];
   $: userAssignedPointValue = currentState?.points[socket.id];
+  $: isAdmin = currentState?.admin === socket.id;
 
   function assignPointValue(pointValue) {
-    console.log("current state", currentState, socket.id);
     currentState.points[socket.id] = pointValue;
     socket.emit("assign-point-value", id, pointValue, (res) => {
-      console.error("Error assigning point value");
-      console.log(res);
+      console.error("Error assigning point value", res);
       currentState.points[socket.id] = null;
     });
+  }
+
+  function adminShowPoints() {
+    socket.emit("admin-show-points", id);
+  }
+
+  function adminResetPoints() {
+    socket.emit("admin-reset-points", id);
   }
 
   onMount(() => {
@@ -45,12 +52,27 @@
 <div class="page-layout">
   <div class="cards-container">
     <div class="pointing-cards">
-      <div class="point-placeholder">
-        {!!userAssignedPointValue ? userAssignedPointValue : ""}
+      <div
+        class={`flip-container${
+          userAssignedPointValue === null ? "" : " flip"
+        }`}
+      >
+        <div class="flipper">
+          <div class="point-placeholder front" />
+          <div class="point-placeholder back">
+            {userAssignedPointValue === null ? "" : userAssignedPointValue}
+          </div>
+        </div>
       </div>
       {#each assignedPointsArray as assignedPointValue}
         <div class="point-placeholder">
-          {!!assignedPointValue ? assignedPointValue : ""}
+          {#if assignedPointValue === null}
+            ...
+          {:else if assignedPointValue && !currentState.showPoints}
+            ?
+          {:else}
+            {assignedPointValue}
+          {/if}
         </div>
       {/each}
     </div>
@@ -65,6 +87,17 @@
         </button>
       {/each}
     </div>
+
+    {#if isAdmin}
+      <div class="admin-controls">
+        <button class="admin-button" on:click={adminShowPoints}
+          >Display points</button
+        >
+        <button class="admin-button" on:click={adminResetPoints}
+          >Reset points</button
+        >
+      </div>
+    {/if}
   </div>
 </div>
 
@@ -81,7 +114,10 @@
 
   .pointing-cards {
     display: flex;
-    direction: row;
+    flex-direction: row;
+    font-size: 1.5rem;
+    font-weight: bold;
+    height: 4rem;
     justify-content: flex-start;
     flex-wrap: wrap;
     margin-bottom: 1rem;
@@ -91,7 +127,10 @@
     align-items: center;
     border: 1px solid gray;
     border-radius: 4px;
+    box-shadow: 5px 5px rgba(0, 0, 255, 0.05);
     display: flex;
+    font-size: 1.5rem;
+    font-weight: bold;
     height: 4rem;
     justify-content: center;
     margin-right: 0.5rem;
@@ -108,6 +147,54 @@
     &:hover {
       background-color: #ebe7e7;
     }
+  }
+
+  .admin-button {
+    cursor: pointer;
+  }
+
+  .flip-container {
+    perspective: 2000px;
+    margin-right: 0.5rem;
+  }
+
+  .flip-container,
+  .front,
+  .back {
+    width: 3rem;
+    height: 4rem;
+  }
+
+  .flipper {
+    transition: 0.6s;
+    transform-style: preserve-3d;
+
+    position: relative;
+  }
+
+  .flip-container.flip .flipper {
+    transform: rotateY(180deg);
+  }
+
+  .front,
+  .back {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  .front {
+    z-index: 2;
+    /* for firefox 31 */
+    transform: rotateY(0deg);
+  }
+
+  /* back, initially hidden pane */
+  .back {
+    transform: rotateY(180deg);
   }
 
   @media (min-width: 600px) {

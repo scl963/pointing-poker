@@ -12,7 +12,7 @@ let currRoomIdx = 1;
 const pointValues = new Set([0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]);
 
 // We create an in memory cache of rooms with metadata and assigned point values, since we
-// can't user socket.io to store data for a room
+// can't use socket.io to store data for a room
 const roomStateCache = {};
 
 app.use(cors());
@@ -79,6 +79,7 @@ io.on("connection", (socket) => {
     roomStateCache[newRoomId] = {
       admin: socket.id,
       points: {},
+      showPoints: false,
     };
     roomStateCache[newRoomId].points[socket.id] = null;
 
@@ -93,9 +94,6 @@ io.on("connection", (socket) => {
 
     if (rooms.has(roomId)) {
       socket.join(roomId);
-
-      const roomSize = rooms.get(roomId).size;
-      io.to(roomId).emit("Room size changed", roomSize);
 
       callback({
         status: "success",
@@ -124,6 +122,34 @@ io.on("connection", (socket) => {
       }
     } else {
       callback("Room does not exist");
+    }
+  });
+
+  socket.on("admin-show-points", function (roomId) {
+    const rooms = io.of("/").adapter.rooms;
+
+    if (rooms.has(roomId)) {
+      if (roomStateCache[roomId].admin === socket.id) {
+        roomStateCache[roomId].showPoints = true;
+        broadcastStateChange(roomId);
+      }
+    }
+  });
+
+  socket.on("admin-reset-points", function (roomId) {
+    console.log("resetting points");
+    const rooms = io.of("/").adapter.rooms;
+
+    console.log(rooms.has(roomId));
+    if (rooms.has(roomId)) {
+      roomStateCache[roomId].showPoints = false;
+      console.log("points", roomStateCache[roomId].points);
+      for (const userId in roomStateCache[roomId].points) {
+        console.log(userId);
+        roomStateCache[roomId].points[userId] = null;
+      }
+
+      broadcastStateChange(roomId);
     }
   });
 });
