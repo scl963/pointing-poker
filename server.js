@@ -16,8 +16,9 @@ const pointValues = new Set([0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]);
 const roomStateCache = {};
 
 app.use(cors());
+app.set("port", port);
 
-app.use("/build", express.static("public/build"));
+app.use(express.static("public"));
 
 io.on("connection", (socket) => {
   console.log("a user connected");
