@@ -17,7 +17,7 @@ const roomStateCache = {};
 
 app.use(cors());
 
-app.use(express.static("public"));
+app.use("/build", express.static("public/build"));
 
 io.on("connection", (socket) => {
   console.log("a user connected");
@@ -111,8 +111,6 @@ io.on("connection", (socket) => {
   socket.on("assign-point-value", function (roomId, pointValue, callback) {
     const rooms = io.of("/").adapter.rooms;
 
-    console.log("Assigning point value", roomId, pointValue);
-
     if (rooms.has(roomId)) {
       if (pointValues.has(pointValue)) {
         roomStateCache[roomId].points[socket.id] = pointValue;
@@ -137,15 +135,11 @@ io.on("connection", (socket) => {
   });
 
   socket.on("admin-reset-points", function (roomId) {
-    console.log("resetting points");
     const rooms = io.of("/").adapter.rooms;
 
-    console.log(rooms.has(roomId));
     if (rooms.has(roomId)) {
       roomStateCache[roomId].showPoints = false;
-      console.log("points", roomStateCache[roomId].points);
       for (const userId in roomStateCache[roomId].points) {
-        console.log(userId);
         roomStateCache[roomId].points[userId] = null;
       }
 
