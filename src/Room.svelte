@@ -87,18 +87,18 @@
         </button>
       {/each}
     </div>
-
-    {#if isAdmin}
-      <div class="admin-controls">
-        <button class="admin-button" on:click={adminShowPoints}
-          >Display points</button
-        >
-        <button class="admin-button" on:click={adminResetPoints}
-          >Reset points</button
-        >
-      </div>
-    {/if}
   </div>
+
+  {#if isAdmin}
+    <div class="admin-controls">
+      <button class="admin-button" on:click={adminShowPoints}
+        >Display points</button
+      >
+      <button class="admin-button" on:click={adminResetPoints}
+        >Reset points</button
+      >
+    </div>
+  {/if}
 </div>
 
 <style lang="scss">
@@ -109,7 +109,7 @@
     height: 100vh;
     justify-content: center;
     padding: 1rem;
-    width: 100vw;
+    max-width: 100vw;
   }
 
   .pointing-cards {
@@ -117,7 +117,6 @@
     flex-direction: row;
     font-size: 1.5rem;
     font-weight: bold;
-    height: 4rem;
     justify-content: flex-start;
     flex-wrap: wrap;
     margin-bottom: 1rem;
@@ -133,6 +132,7 @@
     font-weight: bold;
     height: 4rem;
     justify-content: center;
+    margin-bottom: 0.5rem;
     margin-right: 0.5rem;
     width: 3rem;
   }
