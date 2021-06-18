@@ -5,7 +5,8 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "start": "node server.js --no-clear"
+    "start": "node server.js --no-clear",
+    "validate": "svelte-check"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^17.0.0",
@@ -16,7 +17,13 @@
     "rollup-plugin-livereload": "^2.0.0",
     "rollup-plugin-svelte": "^7.0.0",
     "rollup-plugin-terser": "^7.0.0",
-    "svelte": "^3.0.0"
+    "svelte": "^3.0.0",
+    "svelte-check": "^1.0.0",
+    "svelte-preprocess": "^4.0.0",
+    "@rollup/plugin-typescript": "^8.0.0",
+    "typescript": "^4.0.0",
+    "tslib": "^2.0.0",
+    "@tsconfig/svelte": "^1.0.0"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -25,7 +32,6 @@
     "sirv-cli": "^1.0.0",
     "socket.io": "^4.1.2",
     "socket.io-client": "^4.0.1",
-    "svelte-preprocess": "^4.7.1",
     "svelte-routing": "^1.6.0",
     "uuid": "^8.3.2"
   },

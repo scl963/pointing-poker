@@ -1,12 +1,22 @@
-<script>
+<script lang="ts">
   import { onMount } from "svelte";
   import { navigate } from "svelte-routing";
 
   export let id;
   export let socket;
 
+  type CurrentState = {
+    admin: string | null;
+    points: object;
+    showPoints: boolean;
+  };
+
   const pointValues = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
-  let currentState = { admin: null, points: {}, showPoints: false };
+  let currentState: CurrentState = {
+    admin: null,
+    points: {},
+    showPoints: false,
+  };
 
   $: assignedPointsArray =
     Object.keys(currentState?.points || {})
@@ -18,7 +28,7 @@
   $: userAssignedPointValue = currentState?.points[socket.id];
   $: isAdmin = currentState?.admin === socket.id;
 
-  function assignPointValue(pointValue) {
+  function assignPointValue(pointValue: number) {
     currentState.points[socket.id] = pointValue;
     socket.emit("assign-point-value", id, pointValue, (res) => {
       console.error("Error assigning point value", res);
