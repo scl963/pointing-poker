@@ -5,7 +5,7 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "start": "node server.js --no-clear",
+    "start": "node server.ts --no-clear",
     "validate": "svelte-check"
   },
   "devDependencies": {

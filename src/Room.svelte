@@ -29,6 +29,7 @@
   $: isAdmin = currentState?.admin === socket.id;
 
   function assignPointValue(pointValue: number) {
+    if (currentState.showPoints === true) return;
     currentState.points[socket.id] = pointValue;
     socket.emit("assign-point-value", id, pointValue, (res) => {
       console.error("Error assigning point value", res);

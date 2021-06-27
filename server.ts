@@ -22,14 +22,14 @@ app.use(express.static("public"));
 
 io.on("connection", (socket) => {
   console.log("a user connected");
+  const rooms = io.of("/").adapter.rooms;
+
 
   if (!socket.userId) {
     socket.userId = uuid();
   }
 
   function broadcastStateChange(roomId) {
-    const rooms = io.of("/").adapter.rooms;
-
     if (rooms.has(roomId) && roomStateCache.hasOwnProperty(roomId)) {
       const roomState = roomStateCache[roomId];
       io.to(roomId).emit("state-change", roomState);
@@ -41,8 +41,6 @@ io.on("connection", (socket) => {
   // Leaving room logic happens in disconnecting because on disconnect there's no record
   // of which rooms a user just left and we need to keep the cache in sync with socket.io
   socket.on("disconnecting", () => {
-    const rooms = io.of("/").adapter.rooms;
-
     socket.rooms.forEach((roomId) => {
       if (rooms.has(roomId) && roomStateCache.hasOwnProperty(roomId)) {
         // Remove user from pointing map
@@ -91,8 +89,6 @@ io.on("connection", (socket) => {
 
   // TODO: implement max room size
   socket.on("join-room-by-id", function (roomId, callback) {
-    const rooms = io.of("/").adapter.rooms;
-
     if (rooms.has(roomId)) {
       socket.join(roomId);
 
@@ -110,11 +106,16 @@ io.on("connection", (socket) => {
   });
 
   socket.on("assign-point-value", function (roomId, pointValue, callback) {
-    const rooms = io.of("/").adapter.rooms;
-
     if (rooms.has(roomId)) {
+      if (roomStateCache[roomId].showPoints === true) return
       if (pointValues.has(pointValue)) {
         roomStateCache[roomId].points[socket.id] = pointValue;
+
+        // Automatically display points when everyone has voted
+        if (Object.values(roomStateCache[roomId].points).every(el => typeof el === 'number' && el >-1)) {
+          roomStateCache[roomId].showPoints = true;
+        }
+
         broadcastStateChange(roomId);
       } else {
         callback("Invalid point value");
@@ -125,8 +126,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("admin-show-points", function (roomId) {
-    const rooms = io.of("/").adapter.rooms;
-
     if (rooms.has(roomId)) {
       if (roomStateCache[roomId].admin === socket.id) {
         roomStateCache[roomId].showPoints = true;
@@ -136,8 +135,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("admin-reset-points", function (roomId) {
-    const rooms = io.of("/").adapter.rooms;
-
     if (rooms.has(roomId)) {
       roomStateCache[roomId].showPoints = false;
       for (const userId in roomStateCache[roomId].points) {
