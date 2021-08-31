@@ -5,7 +5,19 @@ const cors = require("cors");
 const path = require("path");
 const http = require("http");
 const server = http.createServer(app);
-const io = require("socket.io")(server);
+const io = require("socket.io")(server, {
+  cors: {
+    origin:
+      process.env.NODE_ENV === "production"
+        ? [
+            "https://bb-pointing-poker.herokuapp.com/",
+            "https://bb-pointing-poker.vercel.app/",
+          ]
+        : ["http://localhost:3000", "http://localhost:8080/"],
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 const uuid = require("uuid").v4;
 
 let currRoomIdx = 1;
@@ -23,7 +35,6 @@ app.use(express.static("public"));
 io.on("connection", (socket) => {
   console.log("a user connected");
   const rooms = io.of("/").adapter.rooms;
-
 
   if (!socket.userId) {
     socket.userId = uuid();
@@ -107,12 +118,16 @@ io.on("connection", (socket) => {
 
   socket.on("assign-point-value", function (roomId, pointValue, callback) {
     if (rooms.has(roomId)) {
-      if (roomStateCache[roomId].showPoints === true) return
+      if (roomStateCache[roomId].showPoints === true) return;
       if (pointValues.has(pointValue)) {
         roomStateCache[roomId].points[socket.id] = pointValue;
 
         // Automatically display points when everyone has voted
-        if (Object.values(roomStateCache[roomId].points).every(el => typeof el === 'number' && el >-1)) {
+        if (
+          Object.values(roomStateCache[roomId].points).every(
+            (el) => typeof el === "number" && el > -1
+          )
+        ) {
           roomStateCache[roomId].showPoints = true;
         }
 
