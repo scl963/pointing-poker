@@ -10,10 +10,10 @@ const io = require("socket.io")(server, {
     origin:
       process.env.NODE_ENV === "production"
         ? [
-            "https://bb-pointing-poker.herokuapp.com/",
-            "https://bb-pointing-poker.vercel.app/",
+            "https://bb-pointing-poker.herokuapp.com",
+            "https://bb-pointing-poker.vercel.app",
           ]
-        : ["http://localhost:3000", "http://localhost:8080/"],
+        : ["http://localhost:3000", "http://localhost:8080"],
     methods: ["GET", "POST"],
     credentials: true,
   },
