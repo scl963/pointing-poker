@@ -27,18 +27,7 @@ const pointValues = new Set([0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]);
 // can't use socket.io to store data for a room
 const roomStateCache = {};
 
-app.use(
-  cors(
-    process.env.NODE_ENV === "production"
-      ? {
-          origin: [
-            "https://bb-pointing-poker.herokuapp.com",
-            "https://bb-pointing-poker.vercel.app/",
-          ],
-        }
-      : undefined
-  )
-);
+app.use(cors());
 app.set("port", port);
 
 app.use(express.static("public"));
