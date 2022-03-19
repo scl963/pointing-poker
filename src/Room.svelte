@@ -138,6 +138,7 @@
     border: 1px solid gray;
     border-radius: 4px;
     box-shadow: 5px 5px rgba(0, 0, 255, 0.05);
+    box-sizing: border-box;
     display: flex;
     font-size: 1.5rem;
     font-weight: bold;
